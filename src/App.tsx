@@ -7,12 +7,13 @@ import './App.css';
  * State declaration for <App />
  */
 interface IState {
-  data: ServerRespond[],
+  data: ServerRespond[];
+  showGraph: boolean; // Add this line to the interface
 }
 
 /**
  * The parent element of the react app.
- * It renders title, button and Graph react element.
+ * It renders title, button, and Graph react element.
  */
 class App extends Component<{}, IState> {
   constructor(props: {}) {
@@ -20,27 +21,36 @@ class App extends Component<{}, IState> {
 
     this.state = {
       // data saves the server responds.
-      // We use this state to parse data down to the child element (Graph) as element property
+      // We use this state to parse data down to the child element (Graph) as an element property
       data: [],
+      showGraph: false, // Add this line to initialize showGraph
     };
   }
 
   /**
-   * Render Graph react component with state.data parse as property data
+   * Render Graph react component with state.data parsed as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    // Add a condition to render the graph only if showGraph is true
+    return this.state.showGraph ? <Graph data={this.state.data} /> : null;
   }
 
   /**
-   * Get new data from server and update the state with the new data
+   * Get new data from the server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    // Use setInterval to continuously fetch data
+    const intervalId = setInterval(() => {
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // Update the state with the new data
+        this.setState({ data: [...this.state.data, ...serverResponds] });
+
+        // If there is no more data from the server, stop the interval
+        if (serverResponds.length === 0) {
+          clearInterval(intervalId);
+        }
+      });
+    }, 100); // Fetch data every 100ms
   }
 
   /**
@@ -54,12 +64,12 @@ class App extends Component<{}, IState> {
         </header>
         <div className="App-content">
           <button className="btn btn-primary Stream-button"
-            // when button is click, our react app tries to request
+            // when the button is clicked, our react app tries to request
             // new data from the server.
             // As part of your task, update the getDataFromServer() function
             // to keep requesting the data every 100ms until the app is closed
-            // or the server does not return anymore data.
-            onClick={() => {this.getDataFromServer()}}>
+            // or the server does not return any more data.
+            onClick={() => { this.getDataFromServer() }}>
             Start Streaming Data
           </button>
           <div className="Graph">
